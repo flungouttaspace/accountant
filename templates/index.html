@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block tytul %}Pulpit · Accountant{% endblock %}
+{% block tresc %}
+<div class="wstep"><div><h1>Ewidencja firmy</h1><p>Sprawdź stan firmy i dodaj nową operację.</p></div><a class="link" href="{{ url_for('historia') }}">Zobacz historię →</a></div>
+{% if blad %}<div class="komunikat blad" role="alert">{{ blad }}</div>{% endif %}
+{% if zapisano %}<div class="komunikat sukces" role="status">Operacja została zapisana.</div>{% endif %}
+<section class="podsumowanie" aria-label="Podsumowanie firmy">
+    <div class="karta saldo"><p>Aktualne saldo</p><strong>{{ manager.pieniadze(manager.saldo) }}</strong><span>Środki na koncie firmy</span></div>
+</section>
+<section class="panel"><div class="tytul-sekcji"><h2>Stan magazynu</h2><span>{{ manager.magazyn|length }} pozycji</span></div>
+<div class="tabela"><table><thead><tr><th>Produkt</th><th>Cena jednostkowa</th><th>Liczba sztuk</th></tr></thead><tbody>
+{% for nazwa, produkt in manager.magazyn|dictsort %}<tr><td>{{ nazwa }}</td><td>{{ manager.pieniadze(produkt.cena) }}</td><td>{{ produkt.ilosc }}</td></tr>
+{% else %}<tr><td colspan="3" class="pusto">Magazyn jest pusty. Dodaj pierwszy zakup poniżej.</td></tr>{% endfor %}
+</tbody></table></div><p class="pomoc">Cena jednostkowa pochodzi z ostatniego zakupu produktu.</p></section>
+<h2 class="nowa-operacja">Nowa operacja</h2>
+<div class="formularze">
+{% for typ, tytul, opis, przycisk in [('zakup', 'Zakup produktu', 'Dodaj towar do magazynu.', 'Zapisz zakup'), ('sprzedaż', 'Sprzedaż produktu', 'Zarejestruj sprzedaż towaru.', 'Zapisz sprzedaż')] %}
+<section class="panel formularz"><h3>{{ tytul }}</h3><p>{{ opis }}</p>
+<form method="post" action="{{ url_for('glowna') }}">
+<input type="hidden" name="komenda" value="{{ typ }}">
+<label for="{{ loop.index }}-nazwa">Nazwa produktu</label><input id="{{ loop.index }}-nazwa" name="nazwa" type="text" placeholder="np. kubek" required value="{{ pola.get('nazwa', '') if pola.get('komenda') == typ else '' }}">
+<label for="{{ loop.index }}-cena">Cena jednostkowa (zł)</label><input id="{{ loop.index }}-cena" name="cena" type="number" min="0.01" max="999999999999.99" step="0.01" required placeholder="0,00" value="{{ pola.get('cena', '') if pola.get('komenda') == typ else '' }}">
+<label for="{{ loop.index }}-ilosc">Liczba sztuk</label><input id="{{ loop.index }}-ilosc" name="ilosc" type="number" min="1" max="1000000000" step="1" required placeholder="1" value="{{ pola.get('ilosc', '') if pola.get('komenda') == typ else '' }}">
+<button type="submit">{{ przycisk }}</button></form></section>
+{% endfor %}
+<section class="panel formularz"><h3>Zmiana salda</h3><p>Dodaj lub odejmij środki na koncie.</p><form method="post" action="{{ url_for('glowna') }}">
+<input type="hidden" name="komenda" value="saldo">
+<label for="komentarz">Komentarz</label><input id="komentarz" name="komentarz" type="text" required placeholder="np. wpłata własna" value="{{ pola.get('komentarz', '') }}">
+<label for="wartosc">Wartość (zł)</label><input id="wartosc" name="wartosc" type="number" min="-999999999999.99" max="999999999999.99" step="0.01" required placeholder="0,00" value="{{ pola.get('wartosc', '') }}">
+<p class="pomoc">Kwota ujemna odejmuje środki, np. −50.</p><button type="submit">Zapisz zmianę salda</button></form></section>
+</div>
+{% endblock %}
